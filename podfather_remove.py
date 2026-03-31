@@ -8,6 +8,15 @@ from shared import \
     unlink_quadlet_file, \
     systemctl
 
+def _remove_resources(kind: str, names: set) -> None:
+    print(f"\u25ba Removing Podman {kind}s...")
+    for name in names:
+        if podman_exists(kind, name):
+            podman_remove(kind, name)
+            print(f"  \u2514\u2500 \u2713 {kind.capitalize()} removed: '{name}'")
+        else:
+            print(f"  \u2514\u2500 \u2713 {kind.capitalize()} not found: '{name}'")
+
 def podfather_remove(path: str, keep_secrets: bool = False, keep_volumes: bool = False, keep_networks: bool = False) -> None:
 
     require_root()
@@ -29,59 +38,23 @@ def podfather_remove(path: str, keep_secrets: bool = False, keep_volumes: bool =
 
     stop_services(ctx)
 
-    # Remove Podman secrets
     if keep_secrets:
         print("► Skipping Podman secrets (--keep-secrets)")
     else:
-        print("► Removing Podman secrets...")
-        for secret in ctx.secret_names:
-            if podman_exists("secret",secret):
-                podman_remove("secret",secret)
-                print(f"  └─ ✓ Secret removed: '{secret}'")
-            else:
-                print(f"  └─ ✓ Secret not found: '{secret}' ")
+        _remove_resources("secret", ctx.secret_names)
 
-    # Removing Podman Containers
-    print("► Removing Podman containers...")
-    for container in ctx.container_names:
-        if podman_exists("container",container):
-            podman_remove("container",container)
-            print(f"  └─ ✓ Container removed: '{container}'")
-        else:
-            print(f"  └─ ✓ Container not found: '{container}'")
+    _remove_resources("container", ctx.container_names)
+    _remove_resources("pod",       ctx.pod_names)
 
-    # Removing Podman Pods
-    print("► Removing Podman Pods...")
-    for pod in ctx.pod_names:
-        if podman_exists("pod",pod):
-            podman_remove("pod",pod)
-            print(f"  └─ ✓ Pod removed: '{pod}'")
-        else:
-            print(f"  └─ ✓ Pod not found: '{pod}'")
-
-    # Removing Podman Volumes
     if keep_volumes:
         print("► Skipping Podman volumes (--keep-volumes)")
     else:
-        print("► Removing Podman Volumes...")
-        for volume in ctx.volume_names:
-            if podman_exists("volume",volume):
-                podman_remove("volume",volume)
-                print(f"  └─ ✓ Volume removed: '{volume}'")
-            else:
-                print(f"  └─ ✓ Volume not found: '{volume}'")
+        _remove_resources("volume", ctx.volume_names)
 
-    # Removing Podman Networks
     if keep_networks:
         print("► Skipping Podman networks (--keep-networks)")
     else:
-        print("► Removing Podman Networks...")
-        for network in ctx.network_names:
-            if podman_exists("network",network):
-                podman_remove("network",network)
-                print(f"  └─ ✓ Network removed: '{network}'")
-            else:
-                print(f"  └─ ✓ Network not found: '{network}'")
+        _remove_resources("network", ctx.network_names)
 
     # Unlinking Quadletfiles from system /etc/containers/systemd
     print("► Un-Linking Quadlet files...")

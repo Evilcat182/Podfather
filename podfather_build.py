@@ -22,11 +22,8 @@ def podfather_build(path: str) -> None:
 
     podfather_yml_path = path / "podfather.yml"
 
-    def load_config(config_path: str ) -> dict:
-        with open(config_path) as f:
-            return yaml.safe_load(f)
-
-    config = load_config(podfather_yml_path)
+    with open(podfather_yml_path) as f:
+        config = yaml.safe_load(f)
 
     print("► Applying permissions...")
     for entry in config.get("permissions", []):
@@ -36,15 +33,15 @@ def podfather_build(path: str) -> None:
         recursive = entry.get("recursive", False)
         r_flag = ["-R"] if recursive else []
 
-        for path in resolved_paths:
+        for p in resolved_paths:
             if "chmod" in entry:
-                subprocess.run(["sudo", "chmod"] + r_flag + [entry["chmod"], str(path)], capture_output=True)
+                subprocess.run(["sudo", "chmod"] + r_flag + [entry["chmod"], str(p)], capture_output=True)
 
             if "owner" in entry or "group" in entry:
                 owner_group = f"{entry.get('owner', '')}:{entry.get('group', '')}"
-                subprocess.run(["sudo", "chown"] + r_flag + [owner_group, str(path)], capture_output=True)
+                subprocess.run(["sudo", "chown"] + r_flag + [owner_group, str(p)], capture_output=True)
 
-            print(f"  └─ ✓ {path}")
+            print(f"  └─ ✓ {p}")
 
     print("► Checking external files...")
     for file in config.get("external_files", []):

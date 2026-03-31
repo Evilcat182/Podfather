@@ -1,6 +1,5 @@
 import argparse, sys
 from pathlib import Path
-from shared import *
 from podfather_build import podfather_build
 from podfather_remove import podfather_remove
 from podfather_start import podfather_start
@@ -8,8 +7,6 @@ from podfather_stop import podfather_stop
 
 class AppError(Exception):
     pass
-
-systemd_dir = Path("/etc/containers/systemd")
 
 def main():
     parser = build_parser()
@@ -86,11 +83,10 @@ def build_parser() -> argparse.ArgumentParser:
     build_p = sub.add_parser('build', formatter_class=FMT,
         help='Build a Quadlet container',
         description='Build a Quadlet container from a project directory.',
-        epilog='Examples:\n  podfather build .\n  podfather build --start /path/to/project\n  podfather build --secret DB_PASS=hunter2 --start .\n  podfather build --secret DB_PASS=hunter2 --secret API_KEY=abc .')
+        epilog='Examples:\n  podfather build .\n  podfather build --start /path/to/project')
     build_p.set_defaults(cmd_parser=build_p)
     build_p.add_argument('path', **PATH_ARG)
     build_p.add_argument('--start', action='store_true', help='Automatically start the service after build')
-    build_p.add_argument('--secret', dest='secrets', action='append', metavar='NAME=VALUE', help='Create a Podman secret (can be repeated)')
 
     start_p = sub.add_parser('start', formatter_class=FMT,
         help='Start a Quadlet container',
