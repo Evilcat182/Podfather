@@ -1,10 +1,10 @@
 from pathlib import Path
 import getpass
-import os
 import yaml
 import subprocess
 from shared import \
     load_quadlet_context,\
+    require_root, \
     stop_services,\
     link_quadlet_file, \
     podman_exists, \
@@ -13,9 +13,7 @@ from shared import \
 
 def podfather_build(path: str) -> None:
 
-    if os.geteuid() != 0:
-        print("Please run script as superuser.\nExiting ...")
-        exit(1)
+    require_root()
 
     path = Path(path)
     ctx = load_quadlet_context(path)

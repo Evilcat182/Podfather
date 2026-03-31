@@ -3,6 +3,8 @@ from pathlib import Path
 from shared import *
 from podfather_build import podfather_build
 from podfather_remove import podfather_remove
+from podfather_start import podfather_start
+from podfather_stop import podfather_stop
 
 class AppError(Exception):
     pass
@@ -28,20 +30,23 @@ def main():
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
-    dispatch = {
-        'build':  lambda: podfather_build(path),
-        'start':  lambda: start(path),
-        'stop':   lambda: stop(path),
-        'remove': lambda: podfather_remove(path),
-    }
-    dispatch[args.command]()
+    match args.command:
+        case 'build':
+            podfather_build(path)
+            if args.start:
+                podfather_start(path)
+        case 'start':
+            podfather_start(path)
+        case 'stop':
+            podfather_stop(path)
+        case 'remove':
+            podfather_remove(
+                path,
+                keep_secrets  = args.keep_secrets,
+                keep_volumes  = args.keep_volumes,
+                keep_networks = args.keep_networks,
+            )
     return 0
-
-def start(path):
-    print(f"executing start function on {path}")
-
-def stop(path):
-    print(f"executing stop function on {path}")
 
 def resolve_path(raw: str) -> Path:
     path = Path(raw).expanduser().resolve()
@@ -109,6 +114,8 @@ def build_parser() -> argparse.ArgumentParser:
     remove_p.add_argument('path', **PATH_ARG)
     remove_p.add_argument('--confirm', action='store_true', help='Confirm removal without prompting')
     remove_p.add_argument('--keep-secrets', action='store_true', help='Keep secrets when removing')
+    remove_p.add_argument('--keep-volumes', action='store_true', help='Keep volumes when removing')
+    remove_p.add_argument('--keep-networks', action='store_true', help='Keep networks when removing')
 
     return parser
 

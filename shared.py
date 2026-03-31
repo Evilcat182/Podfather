@@ -1,4 +1,5 @@
 from typing import Literal
+import os
 import subprocess
 from pathlib import Path
 from dataclasses import dataclass
@@ -20,6 +21,11 @@ class QuadletContext:
     secret_names: set[str]
     volume_names: set[str]
     network_names: set[str]
+
+def require_root() -> None:
+    if os.geteuid() != 0:
+        print("Please run script as superuser.\nExiting ...")
+        exit(1)
 
 def load_quadlet_context(path: str | Path) -> QuadletContext:
     path = Path(path)
