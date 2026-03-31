@@ -8,6 +8,7 @@ from shared import \
     unlink_quadlet_file, \
     systemctl, \
     BOLD, GREEN, RED, YELLOW, RESET
+import sys
 
 def _remove_resources(kind: str, names: set) -> None:
     print(f"{BOLD}► Removing Podman {kind}s...{RESET}")
@@ -35,7 +36,7 @@ def podfather_remove(path: str, keep_secrets: bool = False, keep_volumes: bool =
     print()
     if not confirm("Are you sure you want to continue?"):
         print(f"{YELLOW}Aborted.{RESET}")
-        exit(0)
+        sys.exit(0)
 
     stop_services(ctx)
 

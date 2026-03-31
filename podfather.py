@@ -117,7 +117,14 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 if __name__ == '__main__':
-    exitcode = main()
+    try:
+        exitcode = main()
+    except KeyboardInterrupt:
+        print()
+        sys.exit(130)
+    except Exception as e:
+        print(f"\033[31mError: {e}\033[0m", file=sys.stderr)
+        sys.exit(1)
     # Skip sys.exit if is executed in vscode terminal
-    if not hasattr(sys,'ps1'):
+    if not hasattr(sys, 'ps1'):
         sys.exit(exitcode)
