@@ -9,7 +9,8 @@ from shared import \
     link_quadlet_file, \
     podman_exists, \
     podman_secret_create, \
-    systemctl
+    systemctl, \
+    BOLD, GREEN, RED, YELLOW, RESET
 
 def podfather_build(path: str) -> None:
 
@@ -25,7 +26,7 @@ def podfather_build(path: str) -> None:
     with open(podfather_yml_path) as f:
         config = yaml.safe_load(f)
 
-    print("► Applying permissions...")
+    print(f"{BOLD}► Applying permissions...{RESET}")
     for entry in config.get("permissions", []):
         raw_path = podfather_yml_path.parent / entry["path"]
         # Expand globs (e.g. *.sql); fall back to the plain path if no matches
@@ -41,39 +42,39 @@ def podfather_build(path: str) -> None:
                 owner_group = f"{entry.get('owner', '')}:{entry.get('group', '')}"
                 subprocess.run(["sudo", "chown"] + r_flag + [owner_group, str(p)], capture_output=True)
 
-            print(f"  └─ ✓ {p}")
+            print(f"  └─ {GREEN}✓{RESET} {p}")
 
-    print("► Checking external files...")
+    print(f"{BOLD}► Checking external files...{RESET}")
     for file in config.get("external_files", []):
         path = (podfather_yml_path.parent / file["path"]).resolve()
         if path.exists():
-            print(f"  └─ ✓ External file exists: '{path}'")
+            print(f"  └─ {GREEN}✓{RESET} External file exists: '{path}'")
         else:
-            print(f"  └─ ✘ External file missing:'{path}'\n     {file['description']}")
+            print(f"  └─ {RED}✘{RESET} External file missing:'{path}'\n     {file['description']}")
 
     # Check if secret exsits, create and ask for value if not
-    print("► Checking Podman secrets...")
+    print(f"{BOLD}► Checking Podman secrets...{RESET}")
     for secret_name in ctx.secret_names:
         if podman_exists("secret",secret_name):
-            print(f"  └─ Secret '{secret_name}' exists ✓")
+            print(f"  └─ Secret '{secret_name}' exists {GREEN}✓{RESET}")
         else:
-            print(f"  └─ Secret '{secret_name}' is missing...")
+            print(f"  └─ {YELLOW}Secret '{secret_name}' is missing...{RESET}")
             new_secret = getpass.getpass(f"     \n{secret_name}     \nEnter value for secret:")
             podman_secret_create(secret_name,new_secret)
 
     # Linking Quadletfiles to system /etc/containers/systemd
-    print("► Linking Quadlet files...")
+    print(f"{BOLD}► Linking Quadlet files...{RESET}")
     for src in ctx.quadlet_files_all:
         dst = ctx.systemd_dir / src.name
         link_quadlet_file(src,dst)
 
     # Linking resource dir to system /etc/containers/systemd
-    print("► Linking resource dir...")
+    print(f"{BOLD}► Linking resource dir...{RESET}")
     link_quadlet_file(ctx.path / "resource", ctx.systemd_dir / "resource")
 
-    print("► Reloading systemd daemon...")
+    print(f"{BOLD}► Reloading systemd daemon...{RESET}")
     if systemctl("daemon-reload"):
-        print(f"  └─ ✓ systemctl daemon-reload was successfull")
+        print(f"  └─ {GREEN}✓{RESET} systemctl daemon-reload was successfull")
     else:
-        print(f"  └─ ✘ systemctl daemon-reload failed")
+        print(f"  └─ {RED}✘{RESET} systemctl daemon-reload failed")
 

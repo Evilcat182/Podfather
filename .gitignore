@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+podfather.spec
+build/
+dist/

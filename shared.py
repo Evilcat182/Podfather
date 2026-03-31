@@ -4,6 +4,12 @@ import subprocess
 from pathlib import Path
 from dataclasses import dataclass
 
+RESET  = "\033[0m"
+BOLD   = "\033[1m"
+GREEN  = "\033[32m"
+RED    = "\033[31m"
+YELLOW = "\033[33m"
+
 QUADLET_EXTENSIONS = {
     ".container",
     ".network",
@@ -24,7 +30,7 @@ class QuadletContext:
 
 def require_root() -> None:
     if os.geteuid() != 0:
-        print("Please run script as superuser.\nExiting ...")
+        print(f"{RED}{BOLD}Please run script as superuser.\nExiting ...{RESET}")
         exit(1)
 
 def load_quadlet_context(path: str | Path) -> QuadletContext:
@@ -84,44 +90,44 @@ def confirm(prompt: str) -> bool:
 
 def link_quadlet_file(src: Path, dst: Path) -> None:
     if dst.is_symlink() and dst.resolve() == src.resolve():
-        print(f"  └─ ✓ Already linked '{src} → {dst}'")
+        print(f"  └─ {GREEN}✓{RESET} Already linked '{src} → {dst}'")
         return
     if dst.exists():
-        print(f"\n  └─ '{dst}' exists and is not a symlink or points elsewhere.")
+        print(f"\n  └─ {YELLOW}'{dst}' exists and is not a symlink or points elsewhere.{RESET}")
         if not confirm("     Override? (May cause other containers to break)"):
-            print("  └─ Skipped.")
+            print(f"  └─ {YELLOW}Skipped.{RESET}")
             return
         remove_symboliclink(dst)
     create_symboliclink(src,dst)
-    print(f"  └─ ✓ Linked '{src} → {dst}'")
+    print(f"  └─ {GREEN}✓{RESET} Linked '{src} → {dst}'")
 
 def unlink_quadlet_file(dst: Path) -> None:
     if not dst.exists() and not dst.is_symlink():
-        print(f"  └─ ✓ Quadlet not found. '{dst}'")
+        print(f"  └─ {GREEN}✓{RESET} Quadlet not found. '{dst}'")
         return
     if not dst.is_symlink():
-        print(f"\n  └─ '{dst}' exists but is not a symlink.")
+        print(f"\n  └─ {YELLOW}'{dst}' exists but is not a symlink.{RESET}")
         if not confirm("     Delete anyway? (May cause other containers to break)"):
-            print("  └─ Skipped.")
+            print(f"  └─ {YELLOW}Skipped.{RESET}")
             return
     remove_symboliclink(dst)
-    print(f"  └─ ✓ Unlinked '{dst}'")
+    print(f"  └─ {GREEN}✓{RESET} Unlinked '{dst}'")
 
 def stop_services(ctx: "QuadletContext") -> None:
-    print("► Checking for running services...")
+    print(f"{BOLD}► Checking for running services...{RESET}")
     for pod in ctx.pod_names:
         service_name = f"{pod}-pod"
         if is_service_running(service_name):
-            print(f"  └─ Stopping '{service_name}'...")
+            print(f"  └─ {YELLOW}Stopping '{service_name}'...{RESET}")
             systemctl("stop", service_name)
     for container in ctx.container_names:
         if is_service_running(container):
-            print(f"  └─ Stopping '{container}'...")
+            print(f"  └─ {YELLOW}Stopping '{container}'...{RESET}")
             systemctl("stop", container)
     for network in ctx.network_names:
         service_name = f"{network}-network"
         if is_service_running(service_name):
-            print(f"  └─ Stopping '{service_name}'...")
+            print(f"  └─ {YELLOW}Stopping '{service_name}'...{RESET}")
             systemctl("stop", service_name)
 
 def podman_secret_create(secret_name: str, secret_value: str) -> bool:

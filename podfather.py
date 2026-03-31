@@ -1,5 +1,6 @@
 import argparse, sys
 from pathlib import Path
+from shared import RED, RESET
 from podfather_build import podfather_build
 from podfather_remove import podfather_remove
 from podfather_start import podfather_start
@@ -24,7 +25,7 @@ def main():
         path = resolve_path(args.path)
         validate_quadlet_dir(path)
     except AppError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        print(f"{RED}Error: {e}{RESET}", file=sys.stderr)
         return 1
 
     match args.command:
