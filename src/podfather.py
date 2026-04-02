@@ -28,22 +28,21 @@ def main():
         print(f"{RED}Error: {e}{RESET}", file=sys.stderr)
         return 1
 
-    match args.command:
-        case 'build':
-            podfather_build(path)
-            if args.start:
-                podfather_start(path)
-        case 'start':
+    if args.command == 'build':
+        podfather_build(path)
+        if args.start:
             podfather_start(path)
-        case 'stop':
-            podfather_stop(path)
-        case 'remove':
-            podfather_remove(
-                path,
-                keep_secrets  = args.keep_secrets,
-                keep_volumes  = args.keep_volumes,
-                keep_networks = args.keep_networks,
-            )
+    elif args.command == 'start':
+        podfather_start(path)
+    elif args.command == 'stop':
+        podfather_stop(path)
+    elif args.command == 'remove':
+        podfather_remove(
+            path,
+            keep_secrets  = args.keep_secrets,
+            keep_volumes  = args.keep_volumes,
+            keep_networks = args.keep_networks,
+        )
     return 0
 
 def resolve_path(raw: str) -> Path:
