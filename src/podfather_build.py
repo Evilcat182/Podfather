@@ -1,37 +1,25 @@
 from pathlib import Path
 import getpass
-import yaml
 import subprocess
 from shared import \
     load_quadlet_context,\
     require_root, \
     stop_services,\
     link_quadlet_file, \
-    podman_exists, \
-    podman_secret_create, \
     systemctl, \
     BOLD, GREEN, RED, YELLOW, RESET
+from podman import podman_exists, podman_secret_create
 
 def podfather_build(path: str) -> None:
-
     require_root()
-
     path = Path(path)
-    ctx = load_quadlet_context(path)
 
+    ctx = load_quadlet_context(path)
     stop_services(ctx)
 
-    podfather_yml_path = path / "podfather.yml"
-    config = {}
-    if podfather_yml_path.exists():
-        with open(podfather_yml_path) as f:
-            config = yaml.safe_load(f) or {}
-    else:
-        print(f"{YELLOW}Warning: '{podfather_yml_path}' not found. Skipping YAML-based configuration.{RESET}")
-
     print(f"{BOLD}► Applying permissions...{RESET}")
-    for entry in config.get("permissions", []):
-        raw_path = podfather_yml_path.parent / entry["path"]
+    for entry in ctx.permissions:
+        raw_path = ctx.path / entry["path"]
         # Expand globs (e.g. *.sql); fall back to the plain path if no matches
         resolved_paths = list(raw_path.parent.glob(raw_path.name)) or [raw_path.resolve()]
         recursive = entry.get("recursive", False)
@@ -48,8 +36,8 @@ def podfather_build(path: str) -> None:
             print(f"  └─ {GREEN}✓{RESET} {p}")
 
     print(f"{BOLD}► Checking external files...{RESET}")
-    for file in config.get("external_files", []):
-        path = (podfather_yml_path.parent / file["path"]).resolve()
+    for file in ctx.external_files:
+        path = (ctx.path / file["path"]).resolve()
         if path.exists():
             print(f"  └─ {GREEN}✓{RESET} External file exists: '{path}'")
         else:

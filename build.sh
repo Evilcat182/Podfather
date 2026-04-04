@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSION=1.0.0
+VERSION=1.0.1
 NAME=podfather
 TARBALL="${NAME}-${VERSION}.tar.gz"
 RPMBUILD_DIR="$HOME/rpmbuild"
@@ -23,7 +23,10 @@ echo "==> Copying RPM spec..."
 cp podfather.rpm.spec "$RPMBUILD_DIR/SPECS/${NAME}.spec"
 
 echo "==> Building RPM..."
-rpmbuild -bb "$RPMBUILD_DIR/SPECS/${NAME}.spec"
+rpmbuild -bb \
+    --define "pkg_name $NAME" \
+    --define "pkg_version $VERSION" \
+    "$RPMBUILD_DIR/SPECS/${NAME}.spec"
 
 echo ""
 echo "RPM built:"

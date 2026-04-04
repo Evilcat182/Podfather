@@ -41,3 +41,5 @@ permissions:
 external_files:
   - path: "./resource/test-quadlet-app/private.key"
     description: "TEST SECRET private key for test-quadlet-app.container"
+  - path: "./resource/test-quadlet-db/secret.file"
+    description: "TEST SECRET file for test-quadlet-db.container"

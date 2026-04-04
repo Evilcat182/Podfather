@@ -1,10 +1,11 @@
-import argparse, sys
+import argparse, sys, getpass
 from pathlib import Path
 from shared import RED, RESET
 from podfather_build import podfather_build
 from podfather_remove import podfather_remove
 from podfather_start import podfather_start
 from podfather_stop import podfather_stop
+from podfather_backup import podfather_backup_create, podfather_backup_restore
 
 class AppError(Exception):
     pass
@@ -16,6 +17,9 @@ def main():
     if args.command is None:
         parser.print_help()
         return 1
+
+    if args.command == 'backup':
+        return handle_backup(args)
 
     if getattr(args, 'path', None) is None:
         args.cmd_parser.print_help()
@@ -42,7 +46,36 @@ def main():
             keep_secrets  = args.keep_secrets,
             keep_volumes  = args.keep_volumes,
             keep_networks = args.keep_networks,
+            skip_confirm  = args.confirm,
         )
+    return 0
+
+def handle_backup(args) -> int:
+    if getattr(args, 'backup_command', None) is None:
+        args.cmd_parser.print_help()
+        return 1
+
+    if getattr(args, 'path', None) is None:
+        args.cmd_parser.print_help()
+        return 1
+
+    try:
+        path = resolve_path(args.path)
+        validate_quadlet_dir(path)
+    except AppError as e:
+        print(f"{RED}Error: {e}{RESET}", file=sys.stderr)
+        return 1
+
+    if args.backup_command == 'create':
+        password = getpass.getpass("Encryption password: ")
+        confirm_pw = getpass.getpass("Confirm password: ")
+        if password != confirm_pw:
+            print(f"{RED}Error: Passwords do not match.{RESET}", file=sys.stderr)
+            return 1
+        podfather_backup_create(path, Path(args.file), password)
+    elif args.backup_command == 'restore':
+        password = getpass.getpass("Decryption password: ")
+        podfather_backup_restore(path, Path(args.file), password)
     return 0
 
 def resolve_path(raw: str) -> Path:
@@ -74,6 +107,7 @@ def build_parser() -> argparse.ArgumentParser:
             '  start     Start a Quadlet container\n'
             '  stop      Stop a Quadlet container\n'
             '  remove    Remove a Quadlet container\n'
+            '  backup    Backup or restore a Quadlets secrets and external-files\n'
             '\n'
             "Run 'podfather COMMAND --help' for command-specific help."
         ),
@@ -112,6 +146,35 @@ def build_parser() -> argparse.ArgumentParser:
     remove_p.add_argument('--keep-secrets', action='store_true', help='Keep secrets when removing')
     remove_p.add_argument('--keep-volumes', action='store_true', help='Keep volumes when removing')
     remove_p.add_argument('--keep-networks', action='store_true', help='Keep networks when removing')
+
+    backup_p = sub.add_parser('backup', formatter_class=FMT,
+        help='Backup or restore a Quadlet container',
+        description='Create or restore an encrypted backup of secrets and external files.',
+        epilog=(
+            'Subcommands:\n'
+            '  create    Create a new backup\n'
+            '  restore   Restore from a backup\n'
+            '\n'
+            "Run 'podfather backup SUBCOMMAND --help' for subcommand-specific help."
+        ))
+    backup_p.set_defaults(cmd_parser=backup_p)
+    backup_sub = backup_p.add_subparsers(dest='backup_command')
+
+    backup_create_p = backup_sub.add_parser('create', formatter_class=FMT,
+        help='Create a backup',
+        description='Create an encrypted backup of Podman secrets and external files.',
+        epilog='Examples:\n  podfather backup create --file /tmp/backup.tar .\n  podfather backup create --file /tmp/backup.tar /path/to/project')
+    backup_create_p.set_defaults(cmd_parser=backup_create_p)
+    backup_create_p.add_argument('path', **PATH_ARG)
+    backup_create_p.add_argument('--file', required=True, metavar='FILE', help='Output backup file path')
+
+    backup_restore_p = backup_sub.add_parser('restore', formatter_class=FMT,
+        help='Restore a backup',
+        description='Restore Podman secrets and external files from an encrypted backup.',
+        epilog='Examples:\n  podfather backup restore --file /tmp/backup.tar .\n  podfather backup restore --file /tmp/backup.tar /path/to/project')
+    backup_restore_p.set_defaults(cmd_parser=backup_restore_p)
+    backup_restore_p.add_argument('path', **PATH_ARG)
+    backup_restore_p.add_argument('--file', required=True, metavar='FILE', help='Backup file to restore from')
 
     return parser
 

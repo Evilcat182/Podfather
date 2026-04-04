@@ -4,6 +4,7 @@ import sys
 import subprocess
 from pathlib import Path
 from dataclasses import dataclass
+import yaml
 
 RESET  = "\033[0m"
 BOLD   = "\033[1m"
@@ -28,17 +29,23 @@ class QuadletContext:
     secret_names: set[str]
     volume_names: set[str]
     network_names: set[str]
+    permissions: list[dict]
+    external_files: list[dict]
 
 def require_root() -> None:
     if os.geteuid() != 0:
         print(f"{RED}{BOLD}Please run script as superuser.\nExiting ...{RESET}")
+        if hasattr(sys, 'ps1'):
+            return
         sys.exit(1)
 
 def load_quadlet_context(path: Union[str, Path]) -> QuadletContext:
     path = Path(path)
     quadlet_dir = path / "quadlet"
+    podfather_yml_path = path / "podfather.yml"
     files = [p for p in quadlet_dir.iterdir() if p.is_file() and p.suffix in QUADLET_EXTENSIONS]
-    return QuadletContext(
+
+    quadlet = QuadletContext(
         path              = path,
         systemd_dir       = Path("/etc/containers/systemd"),
         quadlet_files_all = files,
@@ -47,7 +54,19 @@ def load_quadlet_context(path: Union[str, Path]) -> QuadletContext:
         secret_names      = {s.split(",")[0] for f in files if f.suffix == '.container' for s in parse_quadlet(f, "Secret=")},
         volume_names      = {n for f in files if f.suffix == '.volume'    for n in parse_quadlet(f, "VolumeName=")},
         network_names     = {n for f in files if f.suffix == '.network'   for n in parse_quadlet(f, "NetworkName=")},
+        permissions       = [],
+        external_files    = [],
     )
+    
+    if podfather_yml_path.exists():
+        with open(podfather_yml_path) as f:
+            config = yaml.safe_load(f) or {}
+            quadlet.permissions = config.get("permissions", [])
+            quadlet.external_files = config.get("external_files", [])
+    else:
+        print(f"{YELLOW}Warning: '{podfather_yml_path}' not found. Skipping YAML-based configuration.{RESET}")
+
+    return quadlet
 
 def parse_quadlet(path: str, starts_with: str) -> list[str]:
     result = set()
@@ -130,25 +149,4 @@ def stop_services(ctx: "QuadletContext") -> None:
         if is_service_running(service_name):
             print(f"  └─ {YELLOW}Stopping '{service_name}'...{RESET}")
             systemctl("stop", service_name)
-
-def podman_secret_create(secret_name: str, secret_value: str) -> bool:
-    proc = subprocess.run(
-        ["sudo","podman", "secret", "create", secret_name, "-"],
-        input=secret_value,
-        capture_output=True,
-        text=True
-    )
-    return proc.returncode == 0
-
-def podman_exists(resource: Literal["container", "network", "volume", "pod", "secret"], name: str) -> bool:
-    return subprocess.run(
-        ["sudo", "podman", resource, "exists", name],
-        capture_output=True
-    ).returncode == 0
-
-def podman_remove(resource: Literal["container", "network", "volume", "pod", "secret"], name: str) -> bool:
-    return subprocess.run(
-        ["sudo", "podman", resource, "rm", name],
-        capture_output=True
-    ).returncode == 0
 
