@@ -22,9 +22,12 @@ def podfather_build(path: str) -> None:
     stop_services(ctx)
 
     podfather_yml_path = path / "podfather.yml"
-
-    with open(podfather_yml_path) as f:
-        config = yaml.safe_load(f)
+    config = {}
+    if podfather_yml_path.exists():
+        with open(podfather_yml_path) as f:
+            config = yaml.safe_load(f) or {}
+    else:
+        print(f"{YELLOW}Warning: '{podfather_yml_path}' not found. Skipping YAML-based configuration.{RESET}")
 
     print(f"{BOLD}► Applying permissions...{RESET}")
     for entry in config.get("permissions", []):

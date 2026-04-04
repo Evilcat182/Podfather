@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional, Union
 import os
 import sys
 import subprocess
@@ -34,7 +34,7 @@ def require_root() -> None:
         print(f"{RED}{BOLD}Please run script as superuser.\nExiting ...{RESET}")
         sys.exit(1)
 
-def load_quadlet_context(path: str | Path) -> QuadletContext:
+def load_quadlet_context(path: Union[str, Path]) -> QuadletContext:
     path = Path(path)
     quadlet_dir = path / "quadlet"
     files = [p for p in quadlet_dir.iterdir() if p.is_file() and p.suffix in QUADLET_EXTENSIONS]
@@ -58,7 +58,7 @@ def parse_quadlet(path: str, starts_with: str) -> list[str]:
                 result.add(value)
     return list(result)
 
-def systemctl(action: Literal["start","stop","is-active","daemon-reload"], service_name: str | None = None) -> bool:
+def systemctl(action: Literal["start","stop","is-active","daemon-reload"], service_name: Optional[str] = None) -> bool:
     cmd = ["sudo","systemctl",action]
     if service_name is not None:
         cmd.append(service_name)
