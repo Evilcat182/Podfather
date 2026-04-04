@@ -1,0 +1,43 @@
+# ============================================================
+# podfather.yml - Project Configuration
+# ============================================================
+
+# PERMISSIONS
+# Apply DAC (Discretionary Access Control) to files and folders.
+#
+# Options:
+#   path        (required) Path to file or folder, relative to this yml file
+#   chmod       (optional) Permission bits, e.g:
+#                 "+x"  - add execute bit
+#                 "644" - owner read/write, group/others read
+#                 "774" - owner/group read/write/execute, others read
+#                 "750" - owner all, group read/execute, others none
+#   owner       (optional) Owner user  (name or UID, e.g. "root" or "1000")
+#   group       (optional) Owner group (name or GID, e.g. "wheel" or "1000")
+#   recursive   (optional) Apply chmod/chown recursively to all children
+#                 true / false (default: false)
+#
+# Note: owner and group can be used independently of each other
+
+permissions:
+  - path: "./"
+    chmod: "774"
+    owner: "root"
+    group: "wheel"
+    recursive: true
+
+  - path: "./resource/test-quadlet-db/init.sh"
+    chmod: "+x"
+
+
+# EXTERNAL FILES
+# Files that are NOT part of the git repo (.gitignore them!).
+# The build script checks if they exist and warns if missing.
+#
+# Options:
+#   path        (required) Path to secret file, relative to this yml file
+#   description (required) Human readable description of what the file is
+
+external_files:
+  - path: "./resource/test-quadlet-app/private.key"
+    description: "TEST SECRET private key for test-quadlet-app.container"

@@ -1,0 +1,6 @@
+[Unit]
+Description=Test Quadlet for podfather - VOLUME DB
+
+[Volume]
+VolumeName=test-quadlet-db
+Label=app=test-quadlet-db

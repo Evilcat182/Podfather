@@ -1,0 +1,16 @@
+[Unit]
+Description=Test Quadlet for podfather - DB CONTAINER
+
+[Container]
+ContainerName=test-quadlet-db
+Image=docker.io/alpine:latest
+Pod=test-quadlet.pod
+StartWithPod=true
+Volume=./resource/test-quadlet-db/init.sh:/tmp/init.sh:ro,Z
+Secret=test-quadlet_TEST-SECRET2,type=env,target=TEST-SECRET2
+Environment=TEST_ENV1=value1
+Environment=TEST_ENV2=value2
+Exec=sleep infinity
+
+[Service]
+Restart=no

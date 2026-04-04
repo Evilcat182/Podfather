@@ -1,0 +1,10 @@
+[Unit]
+Description=Test Quadlet for podfather - POD
+
+[Pod]
+PodName=test-quadlet
+Network=test-quadlet.network
+#PublishPort=443:443
+
+[Service]
+Restart=no
